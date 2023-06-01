@@ -1,0 +1,6 @@
+# Color Depths
+
+## Squares
+
+
+
