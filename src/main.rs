@@ -21,8 +21,31 @@ use chrono::*;
 use rand::prelude::*;
 use rand::rngs::StdRng;
 
+fn find_color_heavy_space(width: usize, height: usize) -> Option<(u8, u8)> {
+    let area = (width * height) as f32;
+    for x in (0_usize..=255).rev() {
+        let side = f32::sqrt(area / x as f32);
+        if side.fract() == 0.0 {
+            let big = x as u8;
+            let small = side as u8;
+            return Some((big, small));
+        }
+    }
+    None
+}
+
 fn main() {
-    let mut colorspace = ColorSpace::closest_fit(1584, 396);
+    let color_hvy_space = find_color_heavy_space(1584, 396);
+    let (blue, red_green) = color_hvy_space.expect("whoops");
+    let red_selection = ColorSelection::new(red_green as usize, ColorRange::Spaced);
+    let green_selection = ColorSelection::new(red_green as usize, ColorRange::Spaced);
+    let blue_selection = ColorSelection::new(blue as usize, ColorRange::Spaced);
+
+    let mut colorspace =
+        ColorSpace::new([red_selection, green_selection, blue_selection], 1584, 396);
+
+    //let mut colorspace = ColorSpace::closest_fit(1584, 396);
+    //let mut color_selections = colorspace.colors;
     colorspace.start_pos = Point::new(
         colorspace.width / 8,
         colorspace.height - (colorspace.height / 30),
