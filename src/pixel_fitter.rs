@@ -15,9 +15,9 @@ fn color_distance(first: &Color, second: &Color) -> usize {
 fn point_distance(start_pos: &Point, pos: &Point) -> usize {
     let x_diff = usize::abs_diff(start_pos.x, pos.x);
     let y_diff = usize::abs_diff(start_pos.y, pos.y);
-    //(x_diff * x_diff) + (y_diff * y_diff)
+    (x_diff * x_diff) + (y_diff * y_diff)
     //(x_diff + (y_diff * x_diff))
-    x_diff * y_diff
+    //x_diff * y_diff
 }
 
 pub trait PixelFitter {
@@ -27,9 +27,10 @@ pub trait PixelFitter {
 pub struct ColorDistPixelFitter;
 impl PixelFitter for ColorDistPixelFitter {
     fn calculate_fit(&self, grid: &Grid, pos: &Point, color: &Color) -> usize {
-        grid.get_neighbor_colors(pos)
+        grid.get_neighbors(pos)
             .iter()
-            .map(|c| color_distance(color, c))
+            .filter_map(|n| grid.get_color(n))
+            .map(|c| color_distance(color, &c))
             .min()
             .unwrap_or(usize::MAX)
     }

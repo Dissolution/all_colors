@@ -82,7 +82,7 @@ impl HuePixelSorter {
 
 impl ColorSorter for HuePixelSorter {
     fn sort_colors(&mut self, pixels: &mut [Color]) {
-        pixels.sort_by_key(|color| HuePixelSorter::fast_hue(color))
+        pixels.sort_by_key(HuePixelSorter::fast_hue)
     }
 }
 

@@ -14,9 +14,8 @@ pub fn get_factors(n: usize) -> Vec<(usize, usize)> {
 pub fn get_squared_up_factors(n: usize) -> Vec<(usize, usize)> {
     let mut factors = get_factors(n);
     let perfect_side = f32::sqrt(n as f32) as usize;
-    factors.sort_by_key(|&f| {
-        usize::abs_diff(perfect_side, f.0) + usize::abs_diff(perfect_side, f.1)
-    });
+    factors
+        .sort_by_key(|&f| usize::abs_diff(perfect_side, f.0) + usize::abs_diff(perfect_side, f.1));
     factors
 }
 

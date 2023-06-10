@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use crate::colors::*;
 use crate::grid::*;
 use crate::math;
@@ -157,10 +159,9 @@ impl ColorChannel {
                     values.push(255 - value as u8);
                 }
                 values
-            }
-            _ => {
-                unimplemented!()
-            }
+            } // _ => {
+              //     unimplemented!()
+              // }
         }
     }
 }
