@@ -3,9 +3,9 @@ use std::fmt::*;
 
 #[derive(Debug, Default, PartialEq, Eq, Hash, Copy, Clone)]
 pub struct Color {
-    pub red: usize,
-    pub green: usize,
-    pub blue: usize,
+    pub red: u8,
+    pub green: u8,
+    pub blue: u8,
 }
 impl Color {
     #[allow(dead_code)]
@@ -22,19 +22,16 @@ impl Color {
     };
     #[allow(dead_code)]
     pub const MAX_DIST: usize = Color::WHITE.dist(&Color::BLACK);
+    pub const TOTAL_COUNT: usize = (256 * 256 * 256);
 
     pub fn new(red: u8, green: u8, blue: u8) -> Color {
-        Color {
-            red: red as usize,
-            green: green as usize,
-            blue: blue as usize,
-        }
+        Color { red, green, blue }
     }
 
     pub const fn dist(&self, other: &Color) -> usize {
-        let red_dist = usize::abs_diff(self.red, other.red);
-        let green_dist = usize::abs_diff(self.green, other.green);
-        let blue_dist = usize::abs_diff(self.blue, other.blue);
+        let red_dist = u8::abs_diff(self.red, other.red) as usize;
+        let green_dist = u8::abs_diff(self.green, other.green) as usize;
+        let blue_dist = u8::abs_diff(self.blue, other.blue) as usize;
         (red_dist * red_dist) + (green_dist * green_dist) + (blue_dist * blue_dist)
     }
 
@@ -91,18 +88,42 @@ impl LowerHex for Color {
 impl From<Pixel> for Color {
     fn from(value: Pixel) -> Self {
         Color {
-            red: value.r as usize,
-            green: value.g as usize,
-            blue: value.b as usize,
+            red: value.r,
+            green: value.g,
+            blue: value.b,
         }
     }
 }
 impl Into<Pixel> for Color {
     fn into(self) -> Pixel {
         Pixel {
-            r: self.red as u8,
-            g: self.green as u8,
-            b: self.blue as u8,
+            r: self.red,
+            g: self.green,
+            b: self.blue,
         }
+    }
+}
+
+impl TryFrom<u32> for Color {
+    type Error = ();
+
+    fn try_from(value: u32) -> std::result::Result<Self, Self::Error> {
+        let a = (value << 24) as u8;
+        if a != 0 {
+            return Err(());
+        }
+        let r = (value << 16) as u8;
+        let g = (value << 8) as u8;
+        let b = (value << 0) as u8;
+        Ok(Color::new(r, g, b))
+    }
+}
+impl Into<u32> for Color {
+    fn into(self) -> u32 {
+        let mut value: u32 = 0;
+        value |= (self.red as u32) << 16;
+        value |= (self.green as u32) << 8;
+        value |= self.blue as u32;
+        value
     }
 }

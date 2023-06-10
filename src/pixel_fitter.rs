@@ -1,14 +1,13 @@
-use crate::color::Color;
-use crate::colorspace::ColorSpace;
-use crate::pixel_grid::PixelGrid;
+use crate::colors::*;
+use crate::grid::*;
 use crate::point::Point;
 
 #[inline(always)]
 fn color_distance(first: &Color, second: &Color) -> usize {
     // 'true' implementation would return the square root of the below
-    let r_diff = usize::abs_diff(first.red, second.red);
-    let g_diff = usize::abs_diff(first.green, second.green);
-    let b_diff = usize::abs_diff(first.blue, second.blue);
+    let r_diff = u8::abs_diff(first.red, second.red) as usize;
+    let g_diff = u8::abs_diff(first.green, second.green) as usize;
+    let b_diff = u8::abs_diff(first.blue, second.blue) as usize;
     (r_diff * r_diff) + (g_diff * g_diff) + (b_diff * b_diff)
 }
 
@@ -22,42 +21,37 @@ fn point_distance(start_pos: &Point, pos: &Point) -> usize {
 }
 
 pub trait PixelFitter {
-    fn calculate_fit(
-        colorspace: &ColorSpace,
-        grid: &PixelGrid,
-        pos: &Point,
-        color: &Color,
-    ) -> usize;
+    fn calculate_fit(&self, grid: &Grid, pos: &Point, color: &Color) -> usize;
 }
 
 pub struct ColorDistPixelFitter;
 impl PixelFitter for ColorDistPixelFitter {
-    fn calculate_fit(_: &ColorSpace, grid: &PixelGrid, pos: &Point, color: &Color) -> usize {
-        grid.get_point_neighbors(pos)
+    fn calculate_fit(&self, grid: &Grid, pos: &Point, color: &Color) -> usize {
+        grid.get_neighbor_colors(pos)
             .iter()
-            .filter_map(|neighbor| {
-                grid.get_point_color(neighbor)
-                    .map(|pixel| color_distance(pixel, color))
-            })
+            .map(|c| color_distance(color, c))
             .min()
             .unwrap_or(usize::MAX)
     }
 }
 
-pub struct ColorAndPixelDistPixelFitter;
+pub struct ColorAndPixelDistPixelFitter {
+    pub start_pos: Point,
+}
+impl ColorAndPixelDistPixelFitter {
+    pub fn new(start_pos: Point) -> Self {
+        Self { start_pos }
+    }
+}
 impl PixelFitter for ColorAndPixelDistPixelFitter {
-    fn calculate_fit(
-        colorspace: &ColorSpace,
-        grid: &PixelGrid,
-        pos: &Point,
-        color: &Color,
-    ) -> usize {
-        let start_pos = &colorspace.start_pos;
-        grid.get_point_neighbors(pos)
+    fn calculate_fit(&self, grid: &Grid, pos: &Point, color: &Color) -> usize {
+        let start_pos = self.start_pos;
+        grid.get_neighbors(pos)
             .iter()
             .filter_map(|neighbor| {
-                grid.get_point_color(neighbor)
-                    .map(|pixel| color_distance(pixel, color) + point_distance(start_pos, neighbor))
+                grid.get_color(neighbor).map(|pixel| {
+                    color_distance(&pixel, color) + point_distance(&start_pos, neighbor)
+                })
             })
             .min()
             .unwrap_or(usize::MAX)

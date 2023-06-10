@@ -1,58 +1,45 @@
-mod color;
+mod color_placer;
+mod colors;
+mod errors;
 #[allow(unused)]
 #[allow(dead_code)]
-mod colorspace;
-mod image_creator;
-mod neighbor_picker;
+mod grid;
+mod math;
 mod pixel_fitter;
-mod pixel_grid;
-mod point;
+mod scratch;
 mod stopwatch;
 mod traits;
 
-use crate::color::Color;
-use crate::colorspace::*;
-use crate::image_creator::ImageCreator;
-use crate::neighbor_picker::*;
+use crate::color_placer::ColorPlacer;
+use crate::colors::*;
+use crate::grid::*;
 use crate::pixel_fitter::*;
-use crate::point::Point;
+use crate::stopwatch::Stopwatch;
 use crate::traits::*;
+use bmp::Image;
 use chrono::*;
 use rand::prelude::*;
 use rand::rngs::StdRng;
-
-fn find_color_heavy_space(width: usize, height: usize) -> Option<(u8, u8)> {
-    let area = (width * height) as f32;
-    for x in (0_usize..=255).rev() {
-        let side = f32::sqrt(area / x as f32);
-        if side.fract() == 0.0 {
-            let big = x as u8;
-            let small = side as u8;
-            return Some((big, small));
-        }
-    }
-    None
-}
+use rustc_hash::FxHashSet;
 
 fn main() {
-    let color_hvy_space = find_color_heavy_space(1584, 396);
-    let (blue, red_green) = color_hvy_space.expect("whoops");
-    let red_selection = ColorSelection::new(red_green as usize, ColorRange::Spaced);
-    let green_selection = ColorSelection::new(red_green as usize, ColorRange::Spaced);
-    let blue_selection = ColorSelection::new(blue as usize, ColorRange::Spaced);
+    // timing
+    let mut stopwatch = Stopwatch::start_new();
 
-    let mut colorspace =
-        ColorSpace::new([red_selection, green_selection, blue_selection], 1584, 396);
+    //let grid_size = Size::new(1584, 396);
+    let grid_size = Size::new(256, 256);
 
-    //let mut colorspace = ColorSpace::closest_fit(1584, 396);
-    //let mut color_selections = colorspace.colors;
-    colorspace.start_pos = Point::new(
-        colorspace.width / 8,
-        colorspace.height - (colorspace.height / 30),
-    );
+    //let min_max = ColorChannelDepths::find_min_max_depths(1584, 396);
+    let (red, green, blue) = ColorChannel::find_min_mid_max_depths(grid_size).unwrap_or_default();
 
-    // configure our colorspace
-    //let colorspace = ColorSpace::closest_square([ColorSelection::new(40, ColorRange::Spaced); 3]);
+    let red_channel = ColorChannel::spaced(red);
+    let green_channel = ColorChannel::spaced(green);
+    let blue_channel = ColorChannel::spaced(blue);
+
+    let colorspace = ColorSpaceGenerator::new(red_channel, green_channel, blue_channel);
+
+    let mut colors = colorspace.get_colors();
+
     const SEED: u64 = 147;
     let mut sorter = FnColorSorter::new(|colors| {
         let mut rand = StdRng::seed_from_u64(SEED);
@@ -83,11 +70,32 @@ fn main() {
             //     + usize::abs_diff(color.green, color.blue)
         });
     });
+    sorter.sort_colors(&mut colors);
 
-    let mut neighbor_picker = FnNeighborPicker::get_standard();
-    //neighbor_picker.wrapping = true;
+    println!("Color Setup: {:?}", stopwatch.restart_elapsed());
+
+    let mut grid = Grid::new(grid_size);
+    NeighborManager::set_neighbors(&mut grid, NeighborManager::standard_offsets(), false);
+
+    let mut available = FxHashSet::default();
+    // starting position
+    let start_pos = Point::new(
+        grid_size.width / 8,
+        grid_size.height - (grid_size.height / 30),
+    );
+    available.insert(start_pos);
+
     let fitter = ColorDistPixelFitter;
-    let image = ImageCreator::create_image(&colorspace, &mut sorter, &mut neighbor_picker, &fitter);
+
+    println!(
+        "Grid, Neighbors, and Available Setup: {:?}",
+        stopwatch.restart_elapsed()
+    );
+
+    ColorPlacer::fill_grid::<ColorDistPixelFitter>(&mut grid, &mut available, &colors, &fitter);
+
+    let image: Image = grid.try_into().expect("missing pixel!");
+
     let now = Local::now();
 
     let file_name = format!("rust_{}.bmp", now.format("%Y%m%d_%H%M%S"));
