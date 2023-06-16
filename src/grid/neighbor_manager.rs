@@ -1,9 +1,6 @@
 use crate::errors::*;
 use crate::grid::*;
 use num::traits::*;
-
-type GetOffsets = fn() -> Vec<(isize, isize)>;
-
 pub struct NeighborManager;
 impl NeighborManager {
     pub const STD_OFFSETS: [(isize, isize); 8] = [

@@ -1,11 +1,15 @@
-#[allow(unused)]
-#[allow(dead_code)]
+#![allow(dead_code, unused_imports)]
+
+#[macro_use]
+extern crate lazy_static;
+
 mod color_placer;
 mod colors;
 mod errors;
 mod grid;
 mod math;
 mod pixel_fitter;
+mod scratch;
 mod stopwatch;
 mod traits;
 
@@ -20,6 +24,8 @@ use chrono::*;
 use rand::prelude::*;
 use rand::rngs::StdRng;
 use rustc_hash::FxHashSet;
+
+
 
 fn main() {
     // timing
