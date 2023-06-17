@@ -2,6 +2,8 @@ use crate::colors::*;
 use crate::grid::*;
 use crate::point::Point;
 
+use std::fmt::{Display, Formatter, Result};
+
 #[inline(always)]
 fn color_distance(first: &Color, second: &Color) -> usize {
     // 'true' implementation would return the square root of the below
@@ -20,11 +22,16 @@ fn point_distance(start_pos: &Point, pos: &Point) -> usize {
     //x_diff * y_diff
 }
 
-pub trait PixelFitter {
+pub trait PixelFitter: Display {
     fn calculate_fit(&self, grid: &Grid, pos: &Point, color: &Color) -> usize;
 }
 
 pub struct ColorDistPixelFitter;
+impl Display for ColorDistPixelFitter {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "CDPF")
+    }
+}
 impl PixelFitter for ColorDistPixelFitter {
     fn calculate_fit(&self, grid: &Grid, pos: &Point, color: &Color) -> usize {
         grid.get_neighbors(pos)
@@ -38,6 +45,11 @@ impl PixelFitter for ColorDistPixelFitter {
 
 pub struct ColorAndPixelDistPixelFitter {
     pub start_pos: Point,
+}
+impl Display for ColorAndPixelDistPixelFitter {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "CAPDPF:{}", self.start_pos)
+    }
 }
 impl ColorAndPixelDistPixelFitter {
     pub fn new(start_pos: Point) -> Self {

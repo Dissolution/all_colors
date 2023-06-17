@@ -1,4 +1,7 @@
+#![allow(dead_code, unused_imports)]
+
 use bmp::Pixel;
+use std::cmp::Ordering;
 use std::fmt::*;
 
 #[derive(Debug, Default, PartialEq, Eq, Hash, Copy, Clone)]
@@ -8,34 +11,50 @@ pub struct Color {
     pub blue: u8,
 }
 impl Color {
-    #[allow(dead_code)]
     pub const WHITE: Color = Color {
         red: 255,
         green: 255,
         blue: 255,
     };
-    #[allow(dead_code)]
     pub const BLACK: Color = Color {
         red: 0,
         green: 0,
         blue: 0,
     };
-    #[allow(dead_code)]
-    pub const MAX_DIST: usize = Color::WHITE.dist(&Color::BLACK);
-    pub const TOTAL_COUNT: usize = (256 * 256 * 256);
 
-    pub fn new(red: u8, green: u8, blue: u8) -> Color {
+    pub const fn new(red: u8, green: u8, blue: u8) -> Color {
         Color { red, green, blue }
     }
 
+    /// [Wikipedia](https://en.wikipedia.org/wiki/Color_difference)
+    /// Euclidean distance
+    pub fn euclidean_distance(&self, other: &Color) -> f32 {
+        let red_dist = u8::abs_diff(self.red, other.red) as usize;
+        let green_dist = u8::abs_diff(self.green, other.green) as usize;
+        let blue_dist = u8::abs_diff(self.blue, other.blue) as usize;
+        let dist =
+            ((red_dist * red_dist) + (green_dist * green_dist) + (blue_dist * blue_dist)) as f32;
+        f32::sqrt(dist)
+    }
+    /// Euclidean distance (simple)
     pub const fn dist(&self, other: &Color) -> usize {
         let red_dist = u8::abs_diff(self.red, other.red) as usize;
         let green_dist = u8::abs_diff(self.green, other.green) as usize;
         let blue_dist = u8::abs_diff(self.blue, other.blue) as usize;
         (red_dist * red_dist) + (green_dist * green_dist) + (blue_dist * blue_dist)
     }
+    pub fn redmean(&self, other: &Color) -> f32 {
+        let red_dist = u8::abs_diff(self.red, other.red) as usize;
+        let green_dist = u8::abs_diff(self.green, other.green) as usize;
+        let blue_dist = u8::abs_diff(self.blue, other.blue) as usize;
+        let r = 0.5 * (self.red as f32 + other.red as f32);
+        let red_part = (2.0 + (r / 256.0)) * ((red_dist * red_dist) as f32);
+        let green_part = 4.0 * ((green_dist * green_dist) as f32);
+        let blue_part = (2.0 + ((255.0 - r) / 256.0)) * ((blue_dist * blue_dist) as f32);
+        f32::sqrt(red_part + green_part + blue_part)
+    }
 
-    #[allow(dead_code)]
+    /// fast get Hue
     pub fn hue(&self) -> usize {
         let (r, g, b) = (self.red, self.green, self.blue);
         let min = r.min(g.min(b));
@@ -87,43 +106,38 @@ impl LowerHex for Color {
 
 impl From<Pixel> for Color {
     fn from(value: Pixel) -> Self {
-        Color {
-            red: value.r,
-            green: value.g,
-            blue: value.b,
-        }
-    }
-}
-impl Into<Pixel> for Color {
-    fn into(self) -> Pixel {
-        Pixel {
-            r: self.red,
-            g: self.green,
-            b: self.blue,
-        }
+        Color::new(value.r, value.g, value.b)
     }
 }
 
-impl TryFrom<u32> for Color {
-    type Error = ();
-
-    fn try_from(value: u32) -> std::result::Result<Self, Self::Error> {
-        let a = (value << 24) as u8;
-        if a != 0 {
-            return Err(());
-        }
+impl From<u32> for Color {
+    fn from(value: u32) -> Self {
+        //let a = (value << 24) as u8;
         let r = (value << 16) as u8;
         let g = (value << 8) as u8;
         let b = (value << 0) as u8;
-        Ok(Color::new(r, g, b))
+        Color::new(r, g, b)
     }
 }
+
 impl Into<u32> for Color {
     fn into(self) -> u32 {
         let mut value: u32 = 0;
+        //value |= (self.alpha as u32) << 24;
         value |= (self.red as u32) << 16;
         value |= (self.green as u32) << 8;
         value |= self.blue as u32;
         value
+    }
+}
+
+impl PartialOrd for Color {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        todo!()
+    }
+}
+impl Ord for Color {
+    fn cmp(&self, other: &Self) -> Ordering {
+        todo!()
     }
 }

@@ -12,6 +12,7 @@ mod pixel_fitter;
 mod scratch;
 mod stopwatch;
 mod traits;
+mod text;
 
 use crate::color_placer::ColorPlacer;
 use crate::colors::*;

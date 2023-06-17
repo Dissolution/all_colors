@@ -1,10 +1,15 @@
 use crate::colors::*;
 use crate::grid::*;
 use crate::pixel_fitter::PixelFitter;
+use crate::text;
+use base64::{engine::general_purpose, Engine as _};
+use chrono::Local;
 use rand::prelude::*;
 use std::arch::asm;
-use std::fmt::{Display, Formatter, Result};
+use std::fmt::{Debug, Display, Formatter, Result};
+use std::ops::Deref;
 use std::thread::Thread;
+use std::time::Instant;
 
 struct ColorPlacerConfig<C, N, F>
 where
@@ -34,7 +39,7 @@ where
         neighbors: N,
         fitter: F,
     ) -> Self {
-        let mut rand = StdRng::seed_from_u64(seed);
+        let rand = StdRng::seed_from_u64(seed);
         let mut initial_points = initial_points;
         assert!(image_size.width > 0);
         assert!(image_size.height > 0);
@@ -60,24 +65,40 @@ where
     F: PixelFitter,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        /* We want to have a way to display a particular ColorPlacerConfig
+         * so that we can encode that information in a file name (or some other place)
+         * in order to recreate images in the future.
+         * All of the options that can be set should be reflected in the output
+         */
+
+        // Seed for RNG
         write!(f, "{}_", self.seed)?;
+        // Image size (this should already be known by looking at the image?)
         write!(f, "{}x{}_", self.image_size.width, self.image_size.height)?;
+        // Starting points
+        let mut text: String = String::new();
+        for point in self.initial_points.iter() {
+            text.push('(');
+            text.push_str(point.x.to_string().deref());
+            text.push(',');
+            text.push_str(point.y.to_string().deref());
+            text.push(')')
+        }
+        text::write_base64(&text, f)?;
 
-        // Todo: Base64 encode?
+        // ColorSpace
+        write!(f, "{}_", self.colorspace)?;
+        // Neighbor Manager
+        write!(f, "{}_", self.neighbors)?;
+        // Pixel Fitter
+        write!(f, "{}_", self.fitter)?;
 
-        write!(
-            f,
-            "{}_{}_{}",
-            self.seed, self.image_size, self.colorspace, self.neighbors, self.fitter
-        )
+        // Timestamp
+        write!(f, "{}", Local::now().format("%Y%m%d_%H%M%S"))
     }
 }
 
-pub trait ColorSpace: Display {
-    fn get_colors(&self) -> Vec<Color>;
-}
-
-pub trait NeighborManager {
+pub trait NeighborManager: Display {
     fn set_neighbors(&mut self, grid: &mut Grid);
 }
 
@@ -91,6 +112,23 @@ impl OffsetNeighborManager {
             offsets: offsets.to_owned(),
             wrap,
         }
+    }
+}
+impl Display for OffsetNeighborManager {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "ONM:")?;
+        if self.wrap {
+            write!(f, "w")?;
+        }
+        let mut text: String = String::new();
+        for point in self.offsets.iter() {
+            text.push('(');
+            text.push_str(point.0.to_string().deref());
+            text.push(',');
+            text.push_str(point.1.to_string().deref());
+            text.push(')')
+        }
+        text::write_base64(&text, f)
     }
 }
 impl NeighborManager for OffsetNeighborManager {
