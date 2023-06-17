@@ -1,6 +1,7 @@
-use crate::colors::*;
-use crate::grid::*;
+use crate::color_sorter::ColorSorter;
+use crate::neighbors::NeighborManager;
 use crate::pixel_fitter::PixelFitter;
+use crate::prelude::*;
 use crate::text;
 use base64::{engine::general_purpose, Engine as _};
 use chrono::Local;
@@ -11,23 +12,26 @@ use std::ops::Deref;
 use std::thread::Thread;
 use std::time::Instant;
 
-struct ColorPlacerConfig<C, N, F>
+pub struct ColorPlacerConfig<C, S, N, F>
 where
     C: ColorSpace,
+    S: ColorSorter,
     N: NeighborManager,
     F: PixelFitter,
 {
     pub seed: u64,
     rand: Box<dyn RngCore>,
     pub image_size: Size,
-    pub initial_points: Vec<Point>,
+    pub initial_points: Vec<UPoint>,
     pub colorspace: C,
+    pub sorter: S,
     pub neighbors: N,
     pub fitter: F,
 }
-impl<C, N, F> ColorPlacerConfig<C, N, F>
+impl<C, S, N, F> ColorPlacerConfig<C, S, N, F>
 where
     C: ColorSpace,
+    S: ColorSorter,
     N: NeighborManager,
     F: PixelFitter,
 {
@@ -35,7 +39,8 @@ where
         seed: u64,
         image_size: Size,
         colorspace: C,
-        initial_points: Vec<Point>,
+        color_sorter: S,
+        initial_points: Vec<UPoint>,
         neighbors: N,
         fitter: F,
     ) -> Self {
@@ -52,15 +57,17 @@ where
             rand: Box::new(rand),
             image_size,
             colorspace,
+            sorter: color_sorter,
             initial_points,
             neighbors,
             fitter,
         }
     }
 }
-impl<C, N, F> Display for ColorPlacerConfig<C, N, F>
+impl<C, S, N, F> Display for ColorPlacerConfig<C, S, N, F>
 where
     C: ColorSpace,
+    S: ColorSorter,
     N: NeighborManager,
     F: PixelFitter,
 {
@@ -95,61 +102,5 @@ where
 
         // Timestamp
         write!(f, "{}", Local::now().format("%Y%m%d_%H%M%S"))
-    }
-}
-
-pub trait NeighborManager: Display {
-    fn set_neighbors(&mut self, grid: &mut Grid);
-}
-
-pub struct OffsetNeighborManager {
-    offsets: Vec<(isize, isize)>,
-    wrap: bool,
-}
-impl OffsetNeighborManager {
-    pub fn new(offsets: &[(isize, isize)], wrap: bool) -> Self {
-        Self {
-            offsets: offsets.to_owned(),
-            wrap,
-        }
-    }
-}
-impl Display for OffsetNeighborManager {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "ONM:")?;
-        if self.wrap {
-            write!(f, "w")?;
-        }
-        let mut text: String = String::new();
-        for point in self.offsets.iter() {
-            text.push('(');
-            text.push_str(point.0.to_string().deref());
-            text.push(',');
-            text.push_str(point.1.to_string().deref());
-            text.push(')')
-        }
-        text::write_base64(&text, f)
-    }
-}
-impl NeighborManager for OffsetNeighborManager {
-    fn set_neighbors(&mut self, grid: &mut Grid) {
-        let (width, height) = (grid.size.width, grid.size.height);
-        let offsets = &self.offsets;
-        let mut pos;
-
-        for y in 0..height {
-            for x in 0..width {
-                pos = Point::new(x, y);
-                let mut pos_neighbors = Vec::with_capacity(offsets.len());
-                for (x_offset, y_offset) in offsets.iter() {
-                    let new_x = x as isize + x_offset;
-                    let new_y = y as isize + y_offset;
-                    if let Some(pt) = grid.validate_xy(new_x, new_y, self.wrap) {
-                        pos_neighbors.push(pt);
-                    }
-                }
-                grid.set_neighbors(&pos, pos_neighbors);
-            }
-        }
     }
 }

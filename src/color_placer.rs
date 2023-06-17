@@ -1,21 +1,41 @@
+use crate::color_sorter::ColorSorter;
 use crate::colors::*;
-use crate::grid::*;
+use crate::config::ColorPlacerConfig;
+use crate::grid::Grid;
+use crate::neighbors::NeighborManager;
 use crate::pixel_fitter::PixelFitter;
+use crate::util::*;
 use rayon::prelude::*;
 use rustc_hash::*;
 use std::slice::Iter;
 
 pub struct ColorPlacer;
 impl ColorPlacer {
-    pub fn fill_grid<F>(grid: &mut Grid, start_points: &[Point], colors: &[Color], pixel_fitter: &F)
+    pub fn create_grid<C, S, N, F>(config: &mut ColorPlacerConfig<C, S, N, F>) -> Grid
     where
+        C: ColorSpace,
+        S: ColorSorter,
+        N: NeighborManager,
         F: PixelFitter + Sync + Send,
     {
+        // Create grid
+        let mut grid = Grid::new(config.image_size);
+        // Set neighbors
+        config.neighbors.set_neighbors(&mut grid);
+
+        // Get the colors
+        let mut colors = config.colorspace.get_colors();
+        // Sort them
+        config.sorter.sort_colors(&mut colors);
+
+        // Configure our update interval (~1%)
         let clf = colors.len() as f32;
         let update_interval = f32::floor(0.01 * clf) as usize;
         let percent_multi = 100.0 / clf;
 
         // Fill all starting points immediately
+        let start_points = &config.initial_points;
+
         assert!(start_points.len() <= colors.len());
         let mut available = FxHashSet::default();
         for (i, pt) in start_points.iter().enumerate() {
@@ -30,6 +50,8 @@ impl ColorPlacer {
         for pt in start_points.iter() {
             available.remove(pt);
         }
+
+        let pixel_fitter = &config.fitter;
 
         // process all colors
         for (i, color) in colors.iter().enumerate().skip(start_points.len()) {
@@ -48,7 +70,7 @@ impl ColorPlacer {
                 .par_iter()
                 .map(|pt| {
                     // attach a fit to the point
-                    let fit = pixel_fitter.calculate_fit(grid, pt, color);
+                    let fit = pixel_fitter.calculate_fit(&grid, pt, color);
                     (fit, pt)
                 })
                 // get the lowest/best fit
@@ -76,5 +98,8 @@ impl ColorPlacer {
         println!("{:.2}% -- queue: {}", 100_f32, available.len());
 
         assert_eq!(available.len(), 0);
+
+        // Finished!
+        grid
     }
 }

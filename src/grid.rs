@@ -1,15 +1,15 @@
-use crate::colors::*;
-use crate::errors::AllColorsError;
-use crate::grid::*;
+use crate::prelude::*;
 use bmp::{Image, Pixel};
 use num::traits::*;
 use std::fmt::{Display, Formatter};
 use std::num::TryFromIntError;
 
+type Point = UPoint;
+
 #[derive(Debug)]
 pub struct Grid {
     colors: Vec<Option<Color>>,
-    neighbors: Vec<Vec<Point>>,
+    neighbors: Vec<Vec<UPoint>>,
     pub size: Size,
 }
 impl Grid {
@@ -17,8 +17,8 @@ impl Grid {
         let count = size.area();
         let mut colors = Vec::with_capacity(count);
         let mut neighbors = Vec::with_capacity(count);
-        for y in 0..size.height {
-            for x in 0..size.width {
+        for _ in 0..size.height {
+            for _ in 0..size.width {
                 colors.push(None);
                 neighbors.push(Vec::with_capacity(8));
             }

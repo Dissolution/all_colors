@@ -1,9 +1,9 @@
 use crate::color::Color;
 use rand::prelude::*;
+use std::fmt::{Display, Formatter, Result};
 
-pub trait ColorSorter {
+pub trait ColorSorter: Display {
     fn sort_colors(&mut self, colors: &mut [Color]);
-    //fn choose<'a, T>(&'a mut self, values: &'a [T]) -> Option<&T>;
 }
 
 pub struct FnColorSorter {
@@ -14,41 +14,39 @@ impl FnColorSorter {
         FnColorSorter { func }
     }
 }
+impl Display for FnColorSorter {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "CS:Fn")
+    }
+}
 impl ColorSorter for FnColorSorter {
     fn sort_colors(&mut self, colors: &mut [Color]) {
         (self.func)(colors)
     }
 }
 
-pub struct RngPixelShuffler<R>
-where
-    R: Rng,
-{
-    rng: R,
+pub struct RandColorSorter {
+    pub seed: u64,
 }
-
-impl<R> RngPixelShuffler<R>
-where
-    R: Rng,
-{
-    #[allow(dead_code)]
-    pub fn new(rng: R) -> Self {
-        RngPixelShuffler { rng }
+impl RandColorSorter {
+    pub fn new(seed: u64) -> Self {
+        Self { seed }
+    }
+}
+impl Display for RandColorSorter {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "CS:Rand{}", self.seed)
+    }
+}
+impl ColorSorter for RandColorSorter {
+    fn sort_colors(&mut self, colors: &mut [Color]) {
+        let mut rand = StdRng::seed_from_u64(self.seed);
+        colors.shuffle(&mut rand);
     }
 }
 
-impl<R> ColorSorter for RngPixelShuffler<R>
-where
-    R: Rng,
-{
-    fn sort_colors(&mut self, color: &mut [Color]) {
-        color.shuffle(&mut self.rng)
-    }
-}
-
-pub struct HuePixelSorter;
-
-impl HuePixelSorter {
+pub struct HueColorSorter;
+impl HueColorSorter {
     pub fn fast_hue(color: &Color) -> usize {
         let (r, g, b) = (color.red, color.green, color.blue);
         let min = r.min(g.min(b));
@@ -79,14 +77,23 @@ impl HuePixelSorter {
         f32::round(hue) as usize
     }
 }
-
-impl ColorSorter for HuePixelSorter {
+impl Display for HueColorSorter {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "CS:Hue")
+    }
+}
+impl ColorSorter for HueColorSorter {
     fn sort_colors(&mut self, pixels: &mut [Color]) {
-        pixels.sort_by_key(HuePixelSorter::fast_hue)
+        pixels.sort_by_key(HueColorSorter::fast_hue)
     }
 }
 
-pub struct NoSorter {}
+pub struct NoSorter;
+impl Display for NoSorter {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "CS:None")
+    }
+}
 impl ColorSorter for NoSorter {
     fn sort_colors(&mut self, _: &mut [Color]) {
         // do nothing

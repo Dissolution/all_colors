@@ -1,7 +1,4 @@
-use crate::colors::*;
-use crate::grid::*;
-use crate::point::Point;
-
+use crate::prelude::*;
 use std::fmt::{Display, Formatter, Result};
 
 #[inline(always)]
@@ -14,7 +11,7 @@ fn color_distance(first: &Color, second: &Color) -> usize {
 }
 
 #[inline(always)]
-fn point_distance(start_pos: &Point, pos: &Point) -> usize {
+fn point_distance(start_pos: &UPoint, pos: &UPoint) -> usize {
     let x_diff = usize::abs_diff(start_pos.x, pos.x);
     let y_diff = usize::abs_diff(start_pos.y, pos.y);
     (x_diff * x_diff) + (y_diff * y_diff)
@@ -23,7 +20,7 @@ fn point_distance(start_pos: &Point, pos: &Point) -> usize {
 }
 
 pub trait PixelFitter: Display {
-    fn calculate_fit(&self, grid: &Grid, pos: &Point, color: &Color) -> usize;
+    fn calculate_fit(&self, grid: &Grid, pos: &UPoint, color: &Color) -> usize;
 }
 
 pub struct ColorDistPixelFitter;
@@ -33,7 +30,7 @@ impl Display for ColorDistPixelFitter {
     }
 }
 impl PixelFitter for ColorDistPixelFitter {
-    fn calculate_fit(&self, grid: &Grid, pos: &Point, color: &Color) -> usize {
+    fn calculate_fit(&self, grid: &Grid, pos: &UPoint, color: &Color) -> usize {
         grid.get_neighbors(pos)
             .iter()
             .filter_map(|n| grid.get_color(n))
@@ -44,7 +41,7 @@ impl PixelFitter for ColorDistPixelFitter {
 }
 
 pub struct ColorAndPixelDistPixelFitter {
-    pub start_pos: Point,
+    pub start_pos: UPoint,
 }
 impl Display for ColorAndPixelDistPixelFitter {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
@@ -52,12 +49,12 @@ impl Display for ColorAndPixelDistPixelFitter {
     }
 }
 impl ColorAndPixelDistPixelFitter {
-    pub fn new(start_pos: Point) -> Self {
+    pub fn new(start_pos: UPoint) -> Self {
         Self { start_pos }
     }
 }
 impl PixelFitter for ColorAndPixelDistPixelFitter {
-    fn calculate_fit(&self, grid: &Grid, pos: &Point, color: &Color) -> usize {
+    fn calculate_fit(&self, grid: &Grid, pos: &UPoint, color: &Color) -> usize {
         let start_pos = self.start_pos;
         grid.get_neighbors(pos)
             .iter()

@@ -1,6 +1,5 @@
-use crate::colors::Color;
-use crate::grid::*;
-use crate::math;
+#![allow(unused, dead_code)]
+use crate::prelude::*;
 use rand::prelude::*;
 use std::fmt::{Display, Formatter, Result};
 
@@ -33,12 +32,12 @@ impl Display for RandColorSpace {
     }
 }
 
-pub struct Channels;
-impl Channels {
+pub struct ColorChannels;
+impl ColorChannels {
     pub fn find_equal_counts(size: Size) -> Option<u8> {
         todo!()
     }
-    pub fn find_min_max_counts(size: Size) -> Option<(u8, u8)> {
+    pub fn find_min_min_max_counts(size: Size) -> Option<(u8, u8)> {
         let area = size.area() as f32;
         for max in (u8::MIN..=u8::MAX).rev() {
             let min = f32::sqrt(area / max as f32);
@@ -54,7 +53,7 @@ impl Channels {
             let rem_area = area / max as f32;
             if rem_area.fract() == 0.0 {
                 let factors = math::get_squared_up_factors(rem_area as usize);
-                if let Some((min, mid)) = factors.get(0) {
+                if let Some((min, mid)) = factors.first() {
                     return Some((*min as u8, *mid as u8, max));
                 }
             }
@@ -102,7 +101,7 @@ impl Channels {
             }
         }
     }
-    pub fn find_closest_min_max_counts(size: Size) -> Option<(Size, u8)> {
+    pub fn find_closest_min_min_max_counts(size: Size) -> Option<(Size, u8)> {
         todo!()
     }
     pub fn find_closest_min_mid_max_counts(size: Size) -> Option<(Size, u8)> {
@@ -110,11 +109,21 @@ impl Channels {
     }
 }
 
-pub struct Channel {
+pub struct ColorChannel {
     pub count: u8,
     pub spacing: ChannelSpacing,
 }
-impl Channel {
+impl ColorChannel {
+    pub fn new(count: u8, spacing: ChannelSpacing) -> Self {
+        Self { count, spacing }
+    }
+    pub fn equidistant(count: u8) -> Self {
+        Self {
+            count,
+            spacing: ChannelSpacing::Equidistant,
+        }
+    }
+
     pub fn get_values(&self) -> Vec<u8> {
         let count = self.count;
         let mut values = Vec::with_capacity(count as usize);
@@ -142,7 +151,7 @@ impl Channel {
         values
     }
 }
-impl Display for Channel {
+impl Display for ColorChannel {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "{}{}", self.count, self.spacing)
     }
@@ -171,17 +180,17 @@ impl Display for ChannelSpacing {
 }
 
 pub struct ChannelColorSpace {
-    pub red: Channel,
-    pub green: Channel,
-    pub blue: Channel,
+    pub red: ColorChannel,
+    pub green: ColorChannel,
+    pub blue: ColorChannel,
 }
 impl ChannelColorSpace {
-    pub fn new(red: Channel, green: Channel, blue: Channel) -> Self {
+    pub fn new(red: ColorChannel, green: ColorChannel, blue: ColorChannel) -> Self {
         ChannelColorSpace { red, green, blue }
     }
 
     pub fn color_count(&self) -> usize {
-        (self.red.count as usize) + (self.green.count as usize) + (self.blue.count as usize)
+        (self.red.count as usize) * (self.green.count as usize) * (self.blue.count as usize)
     }
 }
 

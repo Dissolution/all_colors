@@ -105,8 +105,13 @@ impl LowerHex for Color {
 }
 
 impl From<Pixel> for Color {
-    fn from(value: Pixel) -> Self {
-        Color::new(value.r, value.g, value.b)
+    fn from(pixel: Pixel) -> Self {
+        Color::new(pixel.r, pixel.g, pixel.b)
+    }
+}
+impl From<Color> for Pixel {
+    fn from(color: Color) -> Self {
+        Pixel::new(color.red, color.green, color.blue)
     }
 }
 
@@ -133,11 +138,12 @@ impl Into<u32> for Color {
 
 impl PartialOrd for Color {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        todo!()
+        self.dist(&Color::WHITE)
+            .partial_cmp(&other.dist(&Color::WHITE))
     }
 }
 impl Ord for Color {
     fn cmp(&self, other: &Self) -> Ordering {
-        todo!()
+        self.dist(&Color::WHITE).cmp(&other.dist(&Color::WHITE))
     }
 }
