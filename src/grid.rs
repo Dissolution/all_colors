@@ -4,12 +4,10 @@ use num::traits::*;
 use std::fmt::{Display, Formatter};
 use std::num::TryFromIntError;
 
-type Point = UPoint;
-
 #[derive(Debug)]
 pub struct Grid {
     colors: Vec<Option<Color>>,
-    neighbors: Vec<Vec<UPoint>>,
+    neighbors: Vec<Vec<Point>>,
     pub size: Size,
 }
 impl Grid {
@@ -73,6 +71,9 @@ impl Grid {
         self.size.area()
     }
 
+    fn get_index(&self, x: usize, y: usize) -> usize {
+        x + (y * self.size.width)
+    }
     fn try_get_index(&self, point: &Point) -> Result<usize, AllColorsError> {
         if point.x >= self.size.width {
             Err(AllColorsError::InvalidPoint(*point))
@@ -105,6 +106,19 @@ impl Grid {
             .iter()
             .filter_map(|n| self.get_color(n))
             .collect()
+    }
+
+    pub fn get_available_points(&self) -> Vec<Point> {
+        let mut points = Vec::new();
+        for y in 0..self.size.height {
+            for x in 0..self.size.width {
+                let index = self.get_index(x, y);
+                if self.colors[index].is_none() {
+                    points.push(Point::new(x, y));
+                }
+            }
+        }
+        points
     }
 }
 

@@ -1,8 +1,4 @@
-use crate::color_sorter::ColorSorter;
-use crate::neighbors::NeighborManager;
-use crate::pixel_fitter::PixelFitter;
 use crate::prelude::*;
-use crate::text;
 use base64::{engine::general_purpose, Engine as _};
 use chrono::Local;
 use rand::prelude::*;
@@ -14,15 +10,14 @@ use std::time::Instant;
 
 pub struct ColorPlacerConfig<C, S, N, F>
 where
-    C: ColorSpace,
+    C: ColorSource,
     S: ColorSorter,
     N: NeighborManager,
     F: PixelFitter,
 {
     pub seed: u64,
-    rand: Box<dyn RngCore>,
     pub image_size: Size,
-    pub initial_points: Vec<UPoint>,
+    pub initial_points: Vec<Point>,
     pub colorspace: C,
     pub sorter: S,
     pub neighbors: N,
@@ -30,7 +25,7 @@ where
 }
 impl<C, S, N, F> ColorPlacerConfig<C, S, N, F>
 where
-    C: ColorSpace,
+    C: ColorSource,
     S: ColorSorter,
     N: NeighborManager,
     F: PixelFitter,
@@ -40,11 +35,10 @@ where
         image_size: Size,
         colorspace: C,
         color_sorter: S,
-        initial_points: Vec<UPoint>,
+        initial_points: Vec<Point>,
         neighbors: N,
         fitter: F,
     ) -> Self {
-        let rand = StdRng::seed_from_u64(seed);
         let mut initial_points = initial_points;
         assert!(image_size.width > 0);
         assert!(image_size.height > 0);
@@ -54,7 +48,6 @@ where
         }
         Self {
             seed,
-            rand: Box::new(rand),
             image_size,
             colorspace,
             sorter: color_sorter,
@@ -66,7 +59,7 @@ where
 }
 impl<C, S, N, F> Display for ColorPlacerConfig<C, S, N, F>
 where
-    C: ColorSpace,
+    C: ColorSource,
     S: ColorSorter,
     N: NeighborManager,
     F: PixelFitter,
@@ -91,7 +84,8 @@ where
             text.push_str(point.y.to_string().deref());
             text.push(')')
         }
-        text::write_base64(&text, f)?;
+        // todo: remove base64
+        write_base64(&text, f)?;
 
         // ColorSpace
         write!(f, "{}_", self.colorspace)?;

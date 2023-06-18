@@ -1,13 +1,13 @@
-use crate::util::*;
+use crate::prelude::*;
 use std::num::TryFromIntError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum AllColorsError {
     #[error("invalid point")]
-    InvalidPoint(UPoint),
+    InvalidPoint(Point),
     #[error("data store disconnected")]
     Parse(#[from] TryFromIntError),
     #[error("missing color")]
-    MissingColor(UPoint),
+    MissingColor(Point),
 }

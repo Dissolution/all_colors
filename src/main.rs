@@ -3,27 +3,17 @@
 #[macro_use]
 extern crate lazy_static;
 
-mod color_placer;
-mod color_sorter;
 mod colors;
 mod config;
-mod errors;
 mod grid;
+mod grid_filler;
 mod neighbors;
 mod pixel_fitter;
 mod prelude;
-mod stopwatch;
-mod text;
 mod util;
 
-use crate::color_placer::ColorPlacer;
-use crate::color_sorter::*;
-use crate::colors::*;
-use crate::config::ColorPlacerConfig;
-use crate::neighbors::{NeighborManager, OffsetNeighborManager};
-use crate::pixel_fitter::*;
-use crate::stopwatch::Stopwatch;
-use crate::util::*;
+use crate::prelude::*;
+
 use bmp::Image;
 use chrono::*;
 use rand::prelude::*;
@@ -44,7 +34,7 @@ fn main() {
     // The size of image we are creating
     // Mutable as certain ColorSpace operations might change this for fit
     #[allow(unused_mut)]
-    let mut image_size = Size::new(64, 64);
+    let mut image_size = Size::new(256, 256);
     // LinkedIn header image = Size::new(1584, 396);
 
     // The Colorspace is the configuration for how we're getting the colors
@@ -66,7 +56,7 @@ fn main() {
 
     // Setup the colorspace and verify it can fill the image _exactly_
     // Todo: partial image fills? overfills?
-    colorspace = ChannelColorSpace::new(red_channel, green_channel, blue_channel);
+    colorspace = ColorSpace::new(red_channel, green_channel, blue_channel);
     assert_eq!(colorspace.color_count(), image_size.area());
 
     // The sorter
@@ -129,7 +119,10 @@ fn main() {
 
     // offsets
     // There are presets on OffsetNeighborManager
-    neighbor_manager = OffsetNeighborManager::new(&OffsetNeighborManager::STD_OFFSETS, false);
+    //neighbor_manager = OffsetNeighborManager::new(&OffsetNeighborManager::STD_OFFSETS, false);
+
+    // Random!
+    neighbor_manager = RandNeighborManager::new(seed, false);
 
     // # Fitter
     let fitter;
@@ -153,7 +146,7 @@ fn main() {
 
     println!("Configuration Setup: {:?}", stopwatch.restart_elapsed());
 
-    let grid = ColorPlacer::create_grid(&mut config);
+    let grid = GridFiller::create_grid(&mut config);
 
     println!("Grid Filled: {:?}", stopwatch.restart_elapsed());
 
@@ -195,7 +188,7 @@ impl Display for TestColorSpace {
         write!(f, "CS:Test")
     }
 }
-impl ColorSpace for TestColorSpace {
+impl ColorSource for TestColorSpace {
     fn get_colors(&self) -> Vec<Color> {
         let pixel_count = self.pixel_count;
         let mut colors = Vec::with_capacity(pixel_count);

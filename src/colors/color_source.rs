@@ -1,36 +1,48 @@
 #![allow(unused, dead_code)]
+
 use crate::prelude::*;
 use rand::prelude::*;
 use std::fmt::{Display, Formatter, Result};
 
-pub trait ColorSpace: Display {
+pub trait ColorSource: Display {
     fn get_colors(&self) -> Vec<Color>;
 }
 
-pub struct RandColorSpace {
+// RandColorSource
+
+pub struct RandColorSource {
+    pub seed: u64,
     pub count: usize,
-    colors: Vec<Color>,
 }
-impl RandColorSpace {
-    pub fn new(rand: &mut dyn RngCore, count: usize) -> Self {
-        let mut colors = Vec::with_capacity(count);
-        for _ in 0..count {
-            let u = rand.next_u32();
-            colors.push(u.into());
-        }
-        RandColorSpace { count, colors }
+impl RandColorSource {
+    pub fn new(seed: u64, count: usize) -> Self {
+        Self { seed, count }
     }
 }
-impl ColorSpace for RandColorSpace {
+impl ColorSource for RandColorSource {
     fn get_colors(&self) -> Vec<Color> {
-        self.colors.clone()
+        let mut colors = Vec::new();
+        let mut rand = StdRng::seed_from_u64(self.seed);
+        for _ in 0..self.count {
+            let r = rand.next_u32();
+            colors.push(r.into())
+        }
+        // overkill!
+        //colors.shuffle(&mut rand);
+        colors
     }
 }
-impl Display for RandColorSpace {
+impl Display for RandColorSource {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "CS[r{}]", self.count)
+        write!(
+            f,
+            "RandColorSource(seed: {}, count: {})",
+            self.seed, self.count
+        )
     }
 }
+
+// ColorChannels
 
 pub struct ColorChannels;
 impl ColorChannels {
@@ -52,7 +64,7 @@ impl ColorChannels {
         for max in (u8::MIN..=u8::MAX).rev() {
             let rem_area = area / max as f32;
             if rem_area.fract() == 0.0 {
-                let factors = math::get_squared_up_factors(rem_area as usize);
+                let factors = get_squared_up_factors(rem_area as usize);
                 if let Some((min, mid)) = factors.first() {
                     return Some((*min as u8, *mid as u8, max));
                 }
@@ -71,7 +83,7 @@ impl ColorChannels {
         let mut best_fit;
         loop {
             pixel_count = depth * depth * depth;
-            factors = math::get_factors(pixel_count);
+            factors = get_factors(pixel_count);
             // Do any fit?
             best_fit = factors
                 .iter()
@@ -153,7 +165,7 @@ impl ColorChannel {
 }
 impl Display for ColorChannel {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "{}{}", self.count, self.spacing)
+        write!(f, "{}x{}", self.count, self.spacing)
     }
 }
 
@@ -179,14 +191,14 @@ impl Display for ChannelSpacing {
     }
 }
 
-pub struct ChannelColorSpace {
+pub struct ColorSpace {
     pub red: ColorChannel,
     pub green: ColorChannel,
     pub blue: ColorChannel,
 }
-impl ChannelColorSpace {
+impl ColorSpace {
     pub fn new(red: ColorChannel, green: ColorChannel, blue: ColorChannel) -> Self {
-        ChannelColorSpace { red, green, blue }
+        ColorSpace { red, green, blue }
     }
 
     pub fn color_count(&self) -> usize {
@@ -194,7 +206,7 @@ impl ChannelColorSpace {
     }
 }
 
-impl ColorSpace for ChannelColorSpace {
+impl ColorSource for ColorSpace {
     fn get_colors(&self) -> Vec<Color> {
         let total = self.color_count();
         let mut colors = Vec::with_capacity(total);
@@ -210,8 +222,12 @@ impl ColorSpace for ChannelColorSpace {
         colors
     }
 }
-impl Display for ChannelColorSpace {
+impl Display for ColorSpace {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "CS[{}|{}|{}]", self.red, self.green, self.blue)
+        write!(
+            f,
+            "ColorSpace(red: {}, green: {}, blue: {})",
+            self.red, self.green, self.blue
+        )
     }
 }

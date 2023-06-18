@@ -1,5 +1,7 @@
-pub mod color;
-pub mod colorspace;
+mod color;
+mod color_sorter;
+mod color_source;
 
 pub use color::*;
-pub use colorspace::*;
+pub use color_sorter::*;
+pub use color_source::*;

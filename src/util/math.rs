@@ -1,10 +1,4 @@
-
-use base64::{
-    alphabet,
-    engine::{self, general_purpose},
-    Engine as _, Engine,
-};
-use crate::util::*;
+use crate::prelude::*;
 
 pub fn get_factors(n: usize) -> Vec<(usize, usize)> {
     let upper_bound = f64::floor(f64::sqrt(n as f64)) as usize;

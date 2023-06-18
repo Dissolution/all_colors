@@ -1,5 +1,4 @@
 use crate::prelude::*;
-use crate::text;
 use rand::prelude::*;
 use std::fmt::{Display, Formatter, Result};
 use std::ops::Deref;
@@ -9,8 +8,8 @@ pub trait NeighborManager: Display {
 }
 
 pub struct RandNeighborManager {
-    seed: u64,
-    wrap: bool,
+    pub seed: u64,
+    pub wrap: bool,
 }
 impl RandNeighborManager {
     pub fn new(seed: u64, wrap: bool) -> Self {
@@ -19,7 +18,11 @@ impl RandNeighborManager {
 }
 impl Display for RandNeighborManager {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "NM:R{}", self.seed)
+        write!(
+            f,
+            "RandNeighborManager(seed: {}, wrap: {})",
+            self.seed, self.wrap
+        )
     }
 }
 
@@ -91,7 +94,8 @@ impl Display for OffsetNeighborManager {
             text.push_str(point.1.to_string().deref());
             text.push(')')
         }
-        text::write_base64(&text, f)
+        // todo: FIX THIS, no more base64!
+        write_base64(&text, f)
     }
 }
 impl NeighborManager for OffsetNeighborManager {

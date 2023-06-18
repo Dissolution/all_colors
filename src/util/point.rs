@@ -1,31 +1,19 @@
 use std::fmt::*;
 use std::hash::Hash;
 
-pub type UPoint = Point<usize>;
-pub type IPoint = Point<isize>;
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
-pub struct Point<T>
-where
-    T: Clone + Copy + Eq + PartialEq + Hash + Default,
-{
-    pub x: T,
-    pub y: T,
+pub struct Point {
+    pub x: usize,
+    pub y: usize,
 }
 
-impl<T> Point<T>
-where
-    T: Clone + Copy + Eq + PartialEq + Hash + Default,
-{
-    pub fn new(x: T, y: T) -> Self {
+impl Point {
+    pub fn new(x: usize, y: usize) -> Self {
         Point { x, y }
     }
 }
 
-impl<T> Display for Point<T>
-where
-    T: Clone + Copy + Eq + PartialEq + Hash + Default + Display,
-{
+impl Display for Point {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "({},{})", self.x, self.y)
     }

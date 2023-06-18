@@ -1,9 +1,9 @@
-use crate::color::Color;
+use crate::prelude::*;
 use rand::prelude::*;
 use std::fmt::{Display, Formatter, Result};
 
 pub trait ColorSorter: Display {
-    fn sort_colors(&mut self, colors: &mut [Color]);
+    fn sort_colors(&self, colors: &mut [Color]);
 }
 
 pub struct FnColorSorter {
@@ -16,11 +16,11 @@ impl FnColorSorter {
 }
 impl Display for FnColorSorter {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "CS:Fn")
+        write!(f, "FnColorSorter")
     }
 }
 impl ColorSorter for FnColorSorter {
-    fn sort_colors(&mut self, colors: &mut [Color]) {
+    fn sort_colors(&self, colors: &mut [Color]) {
         (self.func)(colors)
     }
 }
@@ -35,11 +35,11 @@ impl RandColorSorter {
 }
 impl Display for RandColorSorter {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "CS:Rand{}", self.seed)
+        write!(f, "RandColorSorter(seed: {})", self.seed)
     }
 }
 impl ColorSorter for RandColorSorter {
-    fn sort_colors(&mut self, colors: &mut [Color]) {
+    fn sort_colors(&self, colors: &mut [Color]) {
         let mut rand = StdRng::seed_from_u64(self.seed);
         colors.shuffle(&mut rand);
     }
@@ -79,11 +79,11 @@ impl HueColorSorter {
 }
 impl Display for HueColorSorter {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "CS:Hue")
+        write!(f, "HueColorSorter")
     }
 }
 impl ColorSorter for HueColorSorter {
-    fn sort_colors(&mut self, pixels: &mut [Color]) {
+    fn sort_colors(&self, pixels: &mut [Color]) {
         pixels.sort_by_key(HueColorSorter::fast_hue)
     }
 }
@@ -91,11 +91,11 @@ impl ColorSorter for HueColorSorter {
 pub struct NoSorter;
 impl Display for NoSorter {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "CS:None")
+        write!(f, "NoSorter")
     }
 }
 impl ColorSorter for NoSorter {
-    fn sort_colors(&mut self, _: &mut [Color]) {
+    fn sort_colors(&self, _: &mut [Color]) {
         // do nothing
     }
 }

@@ -1,19 +1,14 @@
-use crate::color_sorter::ColorSorter;
-use crate::colors::*;
-use crate::config::ColorPlacerConfig;
-use crate::grid::Grid;
-use crate::neighbors::NeighborManager;
-use crate::pixel_fitter::PixelFitter;
-use crate::util::*;
+use crate::prelude::*;
+use rand::prelude::*;
 use rayon::prelude::*;
 use rustc_hash::*;
 use std::slice::Iter;
 
-pub struct ColorPlacer;
-impl ColorPlacer {
+pub struct GridFiller;
+impl GridFiller {
     pub fn create_grid<C, S, N, F>(config: &mut ColorPlacerConfig<C, S, N, F>) -> Grid
     where
-        C: ColorSpace,
+        C: ColorSource,
         S: ColorSorter,
         N: NeighborManager,
         F: PixelFitter + Sync + Send,
@@ -64,22 +59,38 @@ impl ColorPlacer {
                 );
             }
 
-            // Find the best from available
-            let best_pos = available
-                // in parallel!
-                .par_iter()
-                .map(|pt| {
-                    // attach a fit to the point
-                    let fit = pixel_fitter.calculate_fit(&grid, pt, color);
-                    (fit, pt)
-                })
-                // get the lowest/best fit
-                .min_by_key(|t| t.0)
-                .expect("There aren't enough available pixels!")
-                // only the point, we no longer care about fit
-                .1
-                // copy so we no longer are referencing available
-                .to_owned();
+            // Search for the best possible position to place this Color
+
+            // if we have none available (weird neighbor config?)
+            let best_pos = if available.is_empty() {
+                // get all empty points
+                let empty = grid.get_available_points();
+                if empty.is_empty() {
+                    panic!("WTF?");
+                }
+                // choose one at random
+                let mut rand = StdRng::seed_from_u64(config.seed);
+                let i = rand.gen_range(0..empty.len());
+                println!("No points available, choosing one at random...");
+                empty[i]
+            } else {
+                // Find the best from available
+                available
+                    // in parallel!
+                    .par_iter()
+                    .map(|pt| {
+                        // attach a fit to the point
+                        let fit = pixel_fitter.calculate_fit(&grid, pt, color);
+                        (fit, pt)
+                    })
+                    // get the lowest/best fit
+                    .min_by_key(|t| t.0)
+                    .expect("There aren't enough available pixels!")
+                    // only the point, we no longer care about fit
+                    .1
+                    // copy so we no longer are referencing available
+                    .to_owned()
+            };
 
             // set the pixel
             grid.set_color(&best_pos, color);

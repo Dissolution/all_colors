@@ -109,6 +109,7 @@ impl From<Pixel> for Color {
         Color::new(pixel.r, pixel.g, pixel.b)
     }
 }
+
 impl From<Color> for Pixel {
     fn from(color: Color) -> Self {
         Pixel::new(color.red, color.green, color.blue)
@@ -120,18 +121,18 @@ impl From<u32> for Color {
         //let a = (value << 24) as u8;
         let r = (value << 16) as u8;
         let g = (value << 8) as u8;
-        let b = (value << 0) as u8;
+        let b = value as u8;
         Color::new(r, g, b)
     }
 }
 
-impl Into<u32> for Color {
-    fn into(self) -> u32 {
+impl From<Color> for u32 {
+    fn from(color: Color) -> u32 {
         let mut value: u32 = 0;
-        //value |= (self.alpha as u32) << 24;
-        value |= (self.red as u32) << 16;
-        value |= (self.green as u32) << 8;
-        value |= self.blue as u32;
+        //value |= (color.alpha as u32) << 24;
+        value |= (color.red as u32) << 16;
+        value |= (color.green as u32) << 8;
+        value |= color.blue as u32;
         value
     }
 }
@@ -142,6 +143,7 @@ impl PartialOrd for Color {
             .partial_cmp(&other.dist(&Color::WHITE))
     }
 }
+
 impl Ord for Color {
     fn cmp(&self, other: &Self) -> Ordering {
         self.dist(&Color::WHITE).cmp(&other.dist(&Color::WHITE))
