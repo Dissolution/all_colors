@@ -29,7 +29,7 @@ fn main() {
     let mut stopwatch = Stopwatch::start_new();
 
     // Seed for all random operations, for reproducibility
-    let seed: u64 = 147;
+    let seed: u64 = 555;
 
     // The size of image we are creating
     // Mutable as certain ColorSpace operations might change this for fit
@@ -39,7 +39,7 @@ fn main() {
 
     // The Colorspace is the configuration for how we're getting the colors
     // we are placing. This is one of the ways we really change how an image looks
-    let colorspace;
+    let color_source;
 
     // Example: min/max
     // let min_max = ColorChannels::find_min_min_max_counts(image_size)
@@ -49,15 +49,21 @@ fn main() {
     // let blue_channel = ColorChannel::equidistant(min_max.1);
 
     // Example: min/mid/max
-    let min_mid_max = ColorChannels::find_min_mid_max_counts(image_size).expect("!!!"); // todo: implement closest fit variant!
-    let red_channel = ColorChannel::equidistant(min_mid_max.0);
-    let green_channel = ColorChannel::equidistant(min_mid_max.1);
-    let blue_channel = ColorChannel::equidistant(min_mid_max.2);
+    //let min_mid_max = ColorChannels::find_min_mid_max_counts(image_size).expect("!!!"); // todo: implement closest fit variant!
+    //let red_channel = ColorChannel::equidistant(min_mid_max.0);
+    //let green_channel = ColorChannel::equidistant(min_mid_max.1);
+    //let blue_channel = ColorChannel::equidistant(min_mid_max.2);
 
     // Setup the colorspace and verify it can fill the image _exactly_
     // Todo: partial image fills? overfills?
-    colorspace = ColorSpace::new(red_channel, green_channel, blue_channel);
-    assert_eq!(colorspace.color_count(), image_size.area());
+    //color_source = ColorSpace::new(red_channel, green_channel, blue_channel);
+
+    // Always verify colors == area
+    // Todo: But what if not?
+    //assert_eq!(color_source.color_count(), image_size.area());
+
+    // We can also do completely random colors!
+    color_source = RandColorSource::new(seed, image_size.area());
 
     // The sorter
     let color_sorter;
@@ -119,10 +125,10 @@ fn main() {
 
     // offsets
     // There are presets on OffsetNeighborManager
-    //neighbor_manager = OffsetNeighborManager::new(&OffsetNeighborManager::STD_OFFSETS, false);
+    neighbor_manager = OffsetNeighborManager::new(&OffsetNeighborManager::STD_OFFSETS, false);
 
     // Random!
-    neighbor_manager = RandNeighborManager::new(seed, false);
+    //neighbor_manager = RandNeighborManager::new(seed, false);
 
     // # Fitter
     let fitter;
@@ -134,10 +140,10 @@ fn main() {
     // todo: ways of using all starting points?
     //fitter = ColorAndPixelDistPixelFitter::new(center_pos);
 
-    let mut config = ColorPlacerConfig::new(
+    let config = ColorPlacerConfig::new(
         seed,
         image_size,
-        colorspace,
+        color_source,
         color_sorter,
         start_points,
         neighbor_manager,
@@ -146,7 +152,7 @@ fn main() {
 
     println!("Configuration Setup: {:?}", stopwatch.restart_elapsed());
 
-    let grid = GridFiller::create_grid(&mut config);
+    let grid = GridFiller::create_grid(&config);
 
     println!("Grid Filled: {:?}", stopwatch.restart_elapsed());
 

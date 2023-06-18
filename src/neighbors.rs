@@ -4,7 +4,7 @@ use std::fmt::{Display, Formatter, Result};
 use std::ops::Deref;
 
 pub trait NeighborManager: Display {
-    fn set_neighbors(&mut self, grid: &mut Grid);
+    fn set_neighbors(&self, grid: &mut Grid);
 }
 
 pub struct RandNeighborManager {
@@ -27,7 +27,7 @@ impl Display for RandNeighborManager {
 }
 
 impl NeighborManager for RandNeighborManager {
-    fn set_neighbors(&mut self, grid: &mut Grid) {
+    fn set_neighbors(&self, grid: &mut Grid) {
         let (width, height) = (grid.size.width, grid.size.height);
         let mut pos;
 
@@ -99,7 +99,7 @@ impl Display for OffsetNeighborManager {
     }
 }
 impl NeighborManager for OffsetNeighborManager {
-    fn set_neighbors(&mut self, grid: &mut Grid) {
+    fn set_neighbors(&self, grid: &mut Grid) {
         let (width, height) = (grid.size.width, grid.size.height);
         let offsets = &self.offsets;
         let mut pos;

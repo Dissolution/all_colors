@@ -25,7 +25,8 @@ impl ColorSource for RandColorSource {
         let mut rand = StdRng::seed_from_u64(self.seed);
         for _ in 0..self.count {
             let r = rand.next_u32();
-            colors.push(r.into())
+            let color = r.into();
+            colors.push(color);
         }
         // overkill!
         //colors.shuffle(&mut rand);

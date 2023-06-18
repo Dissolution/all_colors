@@ -6,7 +6,7 @@ use std::slice::Iter;
 
 pub struct GridFiller;
 impl GridFiller {
-    pub fn create_grid<C, S, N, F>(config: &mut ColorPlacerConfig<C, S, N, F>) -> Grid
+    pub fn create_grid<C, S, N, F>(config: &ColorPlacerConfig<C, S, N, F>) -> Grid
     where
         C: ColorSource,
         S: ColorSorter,

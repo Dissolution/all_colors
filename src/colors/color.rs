@@ -119,8 +119,9 @@ impl From<Color> for Pixel {
 impl From<u32> for Color {
     fn from(value: u32) -> Self {
         //let a = (value << 24) as u8;
-        let r = (value << 16) as u8;
-        let g = (value << 8) as u8;
+
+        let r = (value >> 16) as u8;
+        let g = (value >> 8) as u8;
         let b = value as u8;
         Color::new(r, g, b)
     }
