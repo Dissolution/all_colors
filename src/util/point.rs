@@ -1,7 +1,7 @@
 use std::fmt::*;
 use std::hash::Hash;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Point {
     pub x: usize,
     pub y: usize,

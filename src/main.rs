@@ -5,10 +5,10 @@ extern crate lazy_static;
 
 mod colors;
 mod config;
-mod grid;
 mod grid_filler;
 mod neighbors;
 mod pixel_fitter;
+mod pixel_grid;
 mod prelude;
 mod util;
 
@@ -121,11 +121,11 @@ fn main() {
     // }
 
     // # Neighbor Manager
-    let neighbor_manager;
+    let neighbor_component;
 
     // offsets
     // There are presets on OffsetNeighborManager
-    neighbor_manager = OffsetNeighborManager::new(&OffsetNeighborManager::STD_OFFSETS, false);
+    neighbor_component = OffsetNeighborComponent::new(&OffsetNeighborComponent::STD_OFFSETS, false);
 
     // Random!
     //neighbor_manager = RandNeighborManager::new(seed, false);
@@ -146,7 +146,7 @@ fn main() {
         color_source,
         color_sorter,
         start_points,
-        neighbor_manager,
+        neighbor_component,
         fitter,
     );
 

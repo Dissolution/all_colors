@@ -1,5 +1,4 @@
 use crate::prelude::*;
-use base64::{engine::general_purpose, Engine as _};
 use chrono::Local;
 use rand::prelude::*;
 use std::arch::asm;
@@ -12,7 +11,7 @@ pub struct ColorPlacerConfig<C, S, N, F>
 where
     C: ColorSource,
     S: ColorSorter,
-    N: NeighborManager,
+    N: NeighborComponent,
     F: PixelFitter,
 {
     pub seed: u64,
@@ -27,7 +26,7 @@ impl<C, S, N, F> ColorPlacerConfig<C, S, N, F>
 where
     C: ColorSource,
     S: ColorSorter,
-    N: NeighborManager,
+    N: NeighborComponent,
     F: PixelFitter,
 {
     pub fn new(
@@ -61,7 +60,7 @@ impl<C, S, N, F> Display for ColorPlacerConfig<C, S, N, F>
 where
     C: ColorSource,
     S: ColorSorter,
-    N: NeighborManager,
+    N: NeighborComponent,
     F: PixelFitter,
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
@@ -84,8 +83,7 @@ where
             text.push_str(point.y.to_string().deref());
             text.push(')')
         }
-        // todo: remove base64
-        write_base64(&text, f)?;
+        write!(f, "{}", text)?;
 
         // ColorSpace
         write!(f, "{}_", self.colorspace)?;
