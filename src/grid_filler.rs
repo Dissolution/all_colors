@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use crate::grid::{Cell, Grid};
 use rand::prelude::*;
 use rayon::prelude::*;
 use rustc_hash::*;
@@ -6,7 +7,7 @@ use std::slice::Iter;
 
 pub struct GridFiller;
 impl GridFiller {
-    pub fn create_grid<C, S, N, F>(config: &ColorPlacerConfig<C, S, N, F>) -> PixelGrid
+    pub fn create_grid<C, S, N, F>(config: &ColorPlacerConfig<C, S, N, F>) -> Grid
     where
         C: ColorSource,
         S: ColorSorter,
@@ -14,8 +15,12 @@ impl GridFiller {
         F: PixelFitter + Sync + Send,
     {
         // Create grids
-        let mut pixelgrid = PixelGrid::new(config.image_size);
-        let mut neighborgrid = Neighborhood::create(config.image_size, &config.neighbors);
+        let mut pixelgrid = Grid::new(config.image_size);
+        let nc = &config.neighbors;
+        for cell in pixelgrid.cells.iter_mut() {
+            cell.neighbors = Box::from(nc.get_pos_neighbors(pixelgrid.size, cell.position));
+        }
+        //let mut neighborgrid = Neighborhood::create(config.image_size, &config.neighbors);
 
         // Get the colors
         let mut colors = config.colorspace.get_colors();
@@ -33,13 +38,21 @@ impl GridFiller {
         assert!(start_points.len() <= colors.len());
         let mut available = FxHashSet::default();
         for (i, pt) in start_points.iter().enumerate() {
-            pixelgrid.set_color(*pt, colors[i]);
+            pixelgrid.get_cell_mut(pt).color = Some(colors[i]);
             //add empty neighbors to available
-            for neighbor in neighborgrid.get_neighbors(pt) {
-                if pixelgrid.get_color(*neighbor).is_none() {
-                    available.insert(*neighbor);
-                }
-            }
+            pixelgrid
+                .get_neighbors(pt)
+                .iter()
+                .filter_map(|n| {
+                    if n.color.is_none() {
+                        Some(n.position)
+                    } else {
+                        None
+                    }
+                })
+                .for_each(|n| {
+                    available.insert(n);
+                });
         }
         for pt in start_points.iter() {
             available.remove(pt);
@@ -63,7 +76,7 @@ impl GridFiller {
             // if we have none available (weird neighbor config?)
             let best_pos = if available.is_empty() {
                 // get all empty points
-                let empty = pixelgrid.get_available_points();
+                let empty = pixelgrid.get_uncolored_points();
                 if empty.is_empty() {
                     panic!("WTF?");
                 }
@@ -92,17 +105,25 @@ impl GridFiller {
             };
 
             // set the pixel
-            pixelgrid.set_color(best_pos, *color);
+            pixelgrid.get_cell_mut(&best_pos).color = Some(*color);
 
             // adjust available
             available.remove(&best_pos);
 
             //add empty neighbors to available
-            for neighbor in neighborgrid.get_neighbors(&best_pos) {
-                if pixelgrid.get_color(*neighbor).is_none() {
-                    available.insert(*neighbor);
-                }
-            }
+            pixelgrid
+                .get_neighbors(&best_pos)
+                .iter()
+                .filter_map(|n| {
+                    if n.color.is_none() {
+                        Some(n.position)
+                    } else {
+                        None
+                    }
+                })
+                .for_each(|n| {
+                    available.insert(n);
+                });
         }
 
         println!("{:.2}% -- queue: {}", 100_f32, available.len());

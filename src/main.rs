@@ -5,6 +5,7 @@ extern crate lazy_static;
 
 mod colors;
 mod config;
+mod grid;
 mod grid_filler;
 mod neighbors;
 mod pixel_fitter;
@@ -34,7 +35,7 @@ fn main() {
     // The size of image we are creating
     // Mutable as certain ColorSpace operations might change this for fit
     #[allow(unused_mut)]
-    let mut image_size = Size::new(256, 256);
+    let mut image_size = Size::new(1584, 396);
     // LinkedIn header image = Size::new(1584, 396);
 
     // The Colorspace is the configuration for how we're getting the colors

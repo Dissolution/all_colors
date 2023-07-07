@@ -1,4 +1,5 @@
 use crate::prelude::*;
+use crate::grid::{Cell, Grid};
 use std::fmt::{Display, Formatter, Result};
 
 #[inline(always)]
@@ -20,7 +21,7 @@ fn point_distance(start_pos: &Point, pos: &Point) -> usize {
 }
 
 pub trait PixelFitter: Display {
-    fn calculate_fit(&self, grid: &PixelGrid, pos: &Point, color: &Color) -> usize;
+    fn calculate_fit(&self, grid: &Grid, pos: &Point, color: &Color) -> usize;
 }
 
 pub struct ColorDistPixelFitter;
@@ -30,10 +31,9 @@ impl Display for ColorDistPixelFitter {
     }
 }
 impl PixelFitter for ColorDistPixelFitter {
-    fn calculate_fit(&self, grid: &PixelGrid, pos: &Point, color: &Color) -> usize {
-        grid.get_neighbors(*pos)
+    fn calculate_fit(&self, grid: &Grid, pos: &Point, color: &Color) -> usize {
+        grid.get_neighbor_colors(pos)
             .iter()
-            .filter_map(|n| grid.get_color(*n))
             .map(|c| color_distance(color, &c))
             .min()
             .unwrap_or(usize::MAX)
@@ -54,14 +54,18 @@ impl ColorAndPixelDistPixelFitter {
     }
 }
 impl PixelFitter for ColorAndPixelDistPixelFitter {
-    fn calculate_fit(&self, grid: &PixelGrid, pos: &Point, color: &Color) -> usize {
+    fn calculate_fit(&self, grid: &Grid, pos: &Point, color: &Color) -> usize {
         let start_pos = self.start_pos;
-        grid.get_neighbors(*pos)
+        grid.get_neighbors(pos)
             .iter()
-            .filter_map(|neighbor| {
-                grid.get_color(*neighbor).map(|pixel| {
-                    color_distance(&pixel, color) + point_distance(&start_pos, neighbor)
-                })
+            .filter_map(|nc| {
+                if let Some(cell_color) = nc.color {
+                    let dist = color_distance(&cell_color, color)
+                        + point_distance(&start_pos, &nc.position);
+                    Some(dist)
+                } else {
+                    None
+                }
             })
             .min()
             .unwrap_or(usize::MAX)

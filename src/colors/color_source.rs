@@ -48,7 +48,13 @@ impl Display for RandColorSource {
 pub struct ColorChannels;
 impl ColorChannels {
     pub fn find_equal_counts(size: Size) -> Option<u8> {
-        todo!()
+        let area = size.area() as f32;
+        let count = f32::cbrt(area);
+        if count.fract() == 0.0 {
+            Some(count as u8)
+        } else {
+            None
+        }
     }
     pub fn find_min_min_max_counts(size: Size) -> Option<(u8, u8)> {
         let area = size.area() as f32;

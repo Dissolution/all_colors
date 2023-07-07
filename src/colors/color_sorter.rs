@@ -6,20 +6,32 @@ pub trait ColorSorter: Display {
     fn sort_colors(&self, colors: &mut [Color]);
 }
 
-pub struct FnColorSorter {
-    func: fn(&mut [Color]),
+pub struct FnColorSorter<F>
+where
+    F: Fn(&mut [Color]),
+{
+    func: F,
 }
-impl FnColorSorter {
-    pub fn new(func: fn(&mut [Color])) -> Self {
+impl<F> FnColorSorter<F>
+where
+    F: Fn(&mut [Color]),
+{
+    pub fn new(func: F) -> Self {
         FnColorSorter { func }
     }
 }
-impl Display for FnColorSorter {
+impl<F> Display for FnColorSorter<F>
+where
+    F: Fn(&mut [Color]),
+{
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "FnColorSorter")
     }
 }
-impl ColorSorter for FnColorSorter {
+impl<F> ColorSorter for FnColorSorter<F>
+where
+    F: Fn(&mut [Color]),
+{
     fn sort_colors(&self, colors: &mut [Color]) {
         (self.func)(colors)
     }
