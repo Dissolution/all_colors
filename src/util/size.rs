@@ -13,6 +13,7 @@ impl Size {
     pub fn new(width: usize, height: usize) -> Size {
         Size { width, height }
     }
+
     pub fn area(&self) -> usize {
         self.width * self.height
     }

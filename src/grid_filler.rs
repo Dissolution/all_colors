@@ -1,5 +1,5 @@
-use crate::prelude::*;
 use crate::grid::{Cell, Grid};
+use crate::prelude::*;
 use rand::prelude::*;
 use rayon::prelude::*;
 use rustc_hash::*;
@@ -15,10 +15,10 @@ impl GridFiller {
         F: PixelFitter + Sync + Send,
     {
         // Create grids
-        let mut pixelgrid = Grid::new(config.image_size);
+        let mut pixel_grid = Grid::new(config.image_size);
         let nc = &config.neighbors;
-        for cell in pixelgrid.cells.iter_mut() {
-            cell.neighbors = Box::from(nc.get_pos_neighbors(pixelgrid.size, cell.position));
+        for cell in pixel_grid.cells.iter_mut() {
+            cell.neighbors = Box::from(nc.get_pos_neighbors(pixel_grid.size, cell.position));
         }
         //let mut neighborgrid = Neighborhood::create(config.image_size, &config.neighbors);
 
@@ -38,9 +38,9 @@ impl GridFiller {
         assert!(start_points.len() <= colors.len());
         let mut available = FxHashSet::default();
         for (i, pt) in start_points.iter().enumerate() {
-            pixelgrid.get_cell_mut(pt).color = Some(colors[i]);
+            pixel_grid.get_cell_mut(pt).color = Some(colors[i]);
             //add empty neighbors to available
-            pixelgrid
+            pixel_grid
                 .get_neighbors(pt)
                 .iter()
                 .filter_map(|n| {
@@ -76,7 +76,7 @@ impl GridFiller {
             // if we have none available (weird neighbor config?)
             let best_pos = if available.is_empty() {
                 // get all empty points
-                let empty = pixelgrid.get_uncolored_points();
+                let empty = pixel_grid.get_uncolored_points();
                 if empty.is_empty() {
                     panic!("WTF?");
                 }
@@ -92,7 +92,7 @@ impl GridFiller {
                     .par_iter()
                     .map(|pt| {
                         // attach a fit to the point
-                        let fit = pixel_fitter.calculate_fit(&pixelgrid, pt, color);
+                        let fit = pixel_fitter.calculate_fit(&pixel_grid, pt, color);
                         (fit, pt)
                     })
                     // get the lowest/best fit
@@ -105,13 +105,13 @@ impl GridFiller {
             };
 
             // set the pixel
-            pixelgrid.get_cell_mut(&best_pos).color = Some(*color);
+            pixel_grid.get_cell_mut(&best_pos).color = Some(*color);
 
             // adjust available
             available.remove(&best_pos);
 
             //add empty neighbors to available
-            pixelgrid
+            pixel_grid
                 .get_neighbors(&best_pos)
                 .iter()
                 .filter_map(|n| {
@@ -131,6 +131,6 @@ impl GridFiller {
         assert_eq!(available.len(), 0);
 
         // Finished!
-        pixelgrid
+        pixel_grid
     }
 }
